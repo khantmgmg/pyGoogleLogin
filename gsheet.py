@@ -49,18 +49,18 @@ class GoogleSheets:
             return None
         
     def batch_read_range(self, range_names: List[str], header: bool = False):
-    data = []
-    for range_name in range_names:
-        try:
-            result = self.service.spreadsheets().values().get(
-                spreadsheetId=self.spreadsheet_id, range=range_name).execute()
-            values = result.get('values', [])
-            if header:
-                headers = values[0]
-                data.append([dict(zip(headers, row)) for row in values[1:]])
-            else:
-                data.append(values)
-        except HttpError as error:
-            print(f"An error occurred: {error}")
-            data.append(None)
-    return data
+        data = []
+        for range_name in range_names:
+            try:
+                result = self.service.spreadsheets().values().get(
+                    spreadsheetId=self.spreadsheet_id, range=range_name).execute()
+                values = result.get('values', [])
+                if header:
+                    headers = values[0]
+                    data.append([dict(zip(headers, row)) for row in values[1:]])
+                else:
+                    data.append(values)
+            except HttpError as error:
+                print(f"An error occurred: {error}")
+                data.append(None)
+        return data
