@@ -23,9 +23,9 @@ class GoogleSheets:
             data['listOfDict'] = []
             keys = values[0]
             for value in values[1:]:
-            if len(keys) > len(value):
-                for i in range(len(keys) - len(value)):
-                  value += ['']
+                if len(keys) > len(value):
+                    for i in range(len(keys) - len(value)):
+                        value += ['']
                 data['listOfDict'].append(dict(zip(keys, value)))
             return data
         except HttpError as error:
