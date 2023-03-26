@@ -1,9 +1,3 @@
-import google.auth
-from google.auth.transport.requests import Request
-from google.oauth2.service_account import Credentials
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
-
 class GoogleSheets:
     def __init__(self, service_account_info: dict, spreadsheet_id: str):
         self.spreadsheet_id = spreadsheet_id
@@ -18,7 +12,10 @@ class GoogleSheets:
         try:
             result = self.service.spreadsheets().values().get(
                 spreadsheetId=self.spreadsheet_id, range=range_name).execute()
-            return result.get('values', [])
+            values = result.get('values', [])
+            headers = values[0]
+            data = [dict(zip(headers, row)) for row in values[1:]]
+            return values, data
         except HttpError as error:
             print(f"An error occurred: {error}")
             return None
