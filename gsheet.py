@@ -20,9 +20,13 @@ class GoogleSheets:
                 spreadsheetId=self.spreadsheet_id, range=range_name).execute()
             values = result.get('values', [])
             data['listOfList'] = values
-            headers = values[0]
-            dictList = [dict(zip(headers, row)) for row in values[1:]]
-            data['listofDict'] = dictList
+            data['listOfDict'] = []
+            keys = values[0]
+            for value in values[1:]:
+            if len(keys) > len(value):
+                for i in range(len(keys) - len(value)):
+                  value += ['']
+                data['listOfDict'].append(dict(zip(keys, value)))
             return data
         except HttpError as error:
             print(f"An error occurred: {error}")
