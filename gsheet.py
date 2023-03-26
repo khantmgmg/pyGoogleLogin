@@ -18,7 +18,8 @@ class GoogleSheets:
         try:
             result = self.service.spreadsheets().values().get(
                 spreadsheetId=self.spreadsheet_id, range=range_name).execute()
-            data['listOfList'] = result.get('values', [])
+            values = result.get('values', [])
+            data['listOfList'] = values
             headers = values[0]
             dictList = [dict(zip(headers, row)) for row in values[1:]]
             data['listofDict'] = dictList
