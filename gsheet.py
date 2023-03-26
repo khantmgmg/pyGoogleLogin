@@ -1,3 +1,8 @@
+import google.auth
+from google.auth.transport.requests import Request
+from google.oauth2.service_account import Credentials
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 class GoogleSheets:
     def __init__(self, service_account_info: dict, spreadsheet_id: str):
         self.spreadsheet_id = spreadsheet_id
