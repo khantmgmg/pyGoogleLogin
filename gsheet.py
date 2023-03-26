@@ -14,13 +14,15 @@ class GoogleSheets:
         return Credentials.from_service_account_info(service_account_info, scopes=scopes)
 
     def read_range(self, range_name: str):
+        data = {}
         try:
             result = self.service.spreadsheets().values().get(
                 spreadsheetId=self.spreadsheet_id, range=range_name).execute()
-            values = result.get('values', [])
+            data['listOfList'] = result.get('values', [])
             headers = values[0]
-            data = [dict(zip(headers, row)) for row in values[1:]]
-            return values, data
+            dictList = [dict(zip(headers, row)) for row in values[1:]]
+            data['listofDict'] = dictList
+            return data
         except HttpError as error:
             print(f"An error occurred: {error}")
             return None
