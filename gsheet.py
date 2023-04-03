@@ -114,7 +114,6 @@ class GoogleSheets:
 
     def batch_write_ranges(self, data_dict: dict):
         updatebody = {'valueInputOption':'USER_ENTERED','data':[]}
-        data = []
         for range_name, values in data_dict.items():
             check_lst = check_list(values)
             if check_lst['lod']:
@@ -123,7 +122,7 @@ class GoogleSheets:
                 print(f"Data format error in range {range_name}")
                 continue
             updatebody['data'].append({'range': range_name, 'majorDimension':'ROWS', 'values': values})
-        if data:
+        if updatebody['data']:
             try:
                 result = self.service.spreadsheets().values().batchUpdate(
                     spreadsheetId=self.spreadsheet_id, body=updatebody).execute()
