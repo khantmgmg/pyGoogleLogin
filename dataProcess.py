@@ -5,6 +5,8 @@ import time
 import re
 
 def get_fiscal_quarter(month, year):
+  if isinstance(year, str):
+    year = year.replace(',', '')
   year = int(year)
   if month in ['October', 'November', 'December']:
       # return 'Q1 FY{}'.format(year+1)
