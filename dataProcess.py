@@ -101,7 +101,7 @@ class dataProcess:
 
   def prepare_patient_record(patient_record):
     prData = pd.json_normalize(patient_record)
-    prData = prData.query("`Township OD` != '' or `Test Result` != ''")
+    prData = prData.query("`Township OD` != '' and `Test Result` != '' and `Tested Date` != ''")
     prData = pd.json_normalize(prData.to_dict("records"))
     prData['Age Year'] = pd.to_numeric(prData['Age Year'], downcast="float")
     prData['Pregnancy'] = pd.to_numeric(prData['Pregnancy Month (Lactating mother - (-1))'], downcast="float")
