@@ -113,6 +113,7 @@ class GoogleSheets:
             return None
 
     def batch_write_ranges(self, data_dict: dict):
+        updatebody = {'valueInputOption':'USER_ENTERED','data':[]}
         data = []
         for range_name, values in data_dict.items():
             check_lst = check_list(values)
@@ -121,12 +122,11 @@ class GoogleSheets:
             elif not check_lst['lol']:
                 print(f"Data format error in range {range_name}")
                 continue
-            body = {'values': values}
-            data.append({'range': range_name, 'values': values})
+            updatebody['data'].append({'range': range_name, 'majorDimension':'ROWS', 'values': values})
         if data:
             try:
                 result = self.service.spreadsheets().values().batchUpdate(
-                    spreadsheetId=self.spreadsheet_id, body={'data': data}).execute()
+                    spreadsheetId=self.spreadsheet_id, body=updatebody).execute()
                 return result
             except HttpError as error:
                 print(f"An error occurred: {error}")
