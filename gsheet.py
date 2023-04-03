@@ -86,15 +86,15 @@ class GoogleSheets:
         data = {}
         try:
             # Build the request for batch reading multiple sheet ranges
-            batch_request = {
-                'includeValuesInResponse': True,
-                'ranges': sheet_ranges,
-                'majorDimension': 'ROWS'
-            }
+#             batch_request = {
+#                 'includeValuesInResponse': True,
+#                 'ranges': sheet_ranges,
+#                 'majorDimension': 'ROWS'
+#             }
             # Execute the batch read request
             response = self.service.spreadsheets().values().batchGet(
                 spreadsheetId=self.spreadsheet_id,
-                body=batch_request
+                ranges = sheet_ranges
             ).execute()
 
             # Iterate over each sheet range response and format the data
