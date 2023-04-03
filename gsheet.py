@@ -23,6 +23,7 @@ def list_of_lists_to_list_of_dicts(list_of_lists):
 
 def list_of_dicts_to_list_of_lists(list_of_dicts):
       list_of_lists = pd.json_normalize(list_of_dicts)
+      list_of_lists = list_of_lists.fillna('')
       list_of_lists = [list_of_lists.columns.tolist()] + list_of_lists.values.tolist()
       return list_of_lists
     
