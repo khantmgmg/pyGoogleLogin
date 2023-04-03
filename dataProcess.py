@@ -4,6 +4,21 @@ import json
 import time
 import re
 
+def get_fiscal_quarter(month, year):
+  year = int(year)
+  if month in ['October', 'November', 'December']:
+      # return 'Q1 FY{}'.format(year+1)
+      return f"Q1 FY{year+1}"
+  elif month in ['January', 'February', 'March']:
+      # return 'Q2 FY{}'.format(year)
+      return f"Q2 FY{year}"
+  elif month in ['April', 'May', 'June']:
+      # return 'Q3 FY{}'.format(year)
+      return f"Q3 FY{year}"
+  else:
+      # return 'Q4 FY{}'.format(year)
+      return f"Q4 FY{year}"
+
 class dataProcess:
   # Adding State/Region column to All_provider sheet
   def restructure_all_provider(all_villages_data, all_provider_data):
