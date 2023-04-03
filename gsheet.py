@@ -21,15 +21,20 @@ def list_of_lists_to_list_of_dicts(list_of_lists):
     return list_of_dicts
 
 def list_of_dicts_to_list_of_lists(list_of_dicts):
-    keys = set()
-    for dictionary in list_of_dicts:
-        keys.update(dictionary.keys())
-    header = list(keys)
-    list_of_lists = [header]
-    for dictionary in list_of_dicts:
-        row = [dictionary.get(key, '') for key in header]
-        list_of_lists.append(row)
-    return list_of_lists
+      list_of_lists = pd.json_normalize(list_of_dicts)
+      list_of_lists = [list_of_lists.columns.tolist()] + list_of_lists.values.tolist()
+      return list_of_lists
+    
+# def list_of_dicts_to_list_of_lists(list_of_dicts):
+#     keys = set()
+#     for dictionary in list_of_dicts:
+#         keys.update(dictionary.keys())
+#     header = list(keys)
+#     list_of_lists = [header]
+#     for dictionary in list_of_dicts:
+#         row = [dictionary.get(key, '') for key in header]
+#         list_of_lists.append(row)
+#     return list_of_lists
 
 class GoogleSheets:
     def __init__(self, service_account_info: dict, spreadsheet_id: str):
