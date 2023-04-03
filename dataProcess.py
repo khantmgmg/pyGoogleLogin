@@ -117,6 +117,10 @@ class dataProcess:
         np.where((prData['Age Year'] >= 5), '2. 5-9 yr',
         np.where((prData['Age Year'] >= 1), '1. 1-4 yr','0. <1 yr')))
     )
+    prData['Tested Date'] = pd.to_datetime(prData['Tested Date'], format='%d-%b-%Y')
+    prData['Tested month'] = prData['Tested Date'] + pd.offsets.MonthEnd(0)
+    prData['Tested Date'] = prData['Tested Date'].dt.strftime('%d-%b-%Y')
+    prData['Tested month'] = prData['Tested month'].dt.strftime('%b-%Y')
     prData['Clinical audit'] = np.where((prData['Test Result'] == 'Negative'), 'NEG',
         np.where(((prData['Referred'] == 'Y') & (prData['Diagnosis'] == 'Severe')),'Referred (Severe)',
         np.where(((prData['Referred'] == 'Y') & (prData['Age group'] == '0. <1 yr')),'Referred (u1)',
@@ -186,5 +190,83 @@ class dataProcess:
     rpPerform = rpPerform.rename(columns={'Name':'count Name'})
     rpPerformValues = json.loads(rpPerform.to_json(orient='records'))
     return rpPerformValues
-
-
+  
+  def responded_cases(patient_record):
+    df = pd.json_normalize(patient_record)
+    responseCaseIdDf = df[['Organization', 'State Region', 'Township OD', 'Reporting Month', 'Reporting Year', 'Activity', \
+                           'Response to Case ID','Type of Provider']]
+    responseCaseIdDf = responseCaseIdDf.query("`Response to Case ID` != ''")
+    responseCaseIdDf = responseCaseIdDf.drop_duplicates()
+    responseCaseIdDf['# of index cases responded'] = [len([x for x in re.split(',|/', i) if x]) for i in responseCaseIdDf['Response to Case ID']]
+    responseCaseIdDf['Quarter of fiscal year'] = df.apply(lambda x: get_fiscal_quarter(x['Reporting Month'], x['Reporting Year']), axis=1)
+    responseCaseIdDf = responseCaseIdDf.reindex(columns=['Organization', 'State Region', 'Township OD', 'Reporting Month', \
+                                                         'Reporting Year', 'Activity', 'Response to Case ID',\
+                                                         '# of index cases responded','Quarter of fiscal year','Type of Provider'])
+    responseCaseId = json.loads(responseCaseIdDf.to_json(orient='records'))
+    return responseCaseId
+  
+  def casemx_by_rpMth(patient_record):
+    df = pd.json_normalize(patient_record)
+    caseMxByRpMth = df.groupby(['Organization', 'State Region', 'Township OD', 'Type of Provider',\
+                                'Activity', 'Response to Case ID',\
+                                'RHC in carbonless heading', 'Subcenter in carbonless heading',\
+                                'Address in carbonless heading',\
+                                'Reporting Month', 'Reporting Year','Test Result',\
+                                ]).agg({'Name':'count'})
+    caseMxByRpMth = caseMxByRpMth.reset_index()
+    caseMxByRpMth = caseMxByRpMth.rename(columns={'Name':'Number of patients'})
+    caseMxByRpMth = json.loads(caseMxByRpMth.to_json(orient='records'))
+    return caseMxByRpMth
+  
+  def positive_only(patient_record):
+    df = pd.json_normalize(patient_record)
+    positive = ['PF','PV','MIXED','Pf','Pv','Mixed','pf','pv','mixed']
+    posOnly = df.loc[df['Test Result'].isin(positive)]
+    posOnly = pd.json_normalize(posOnly.to_dict("records"))
+    posOnly['Age Year'] = pd.to_numeric(posOnly['Age Year'], downcast="float")
+    posOnly['Pregnancy'] = pd.to_numeric(posOnly['Pregnancy Month (Lactating mother - (-1))'], downcast="float")
+    posOnly['Test Result'] = posOnly['Test Result'].str.upper()
+    posOnly['ACT'] = pd.to_numeric(posOnly['Number of ACT tab treated (not indicated = 77)'], downcast="float")
+    posOnly['CQ'] = pd.to_numeric(posOnly['Number of CQ tab treated (not indicated = 77)'], downcast="float")
+    posOnly['PQ7.5'] = pd.to_numeric(posOnly['Number of PQ7.5mg tab treated (not indicated = 77) (Patient is treated with PQ15mg = 99)'], downcast="float")
+    posOnly['PQ15'] = pd.to_numeric(posOnly['Number of PQ15mg tab treated (not indicated = 77) (Patient is treated with PQ7.5mg = 99)'], downcast="float")
+    posOnly[['ACT', 'CQ' , 'PQ7.5', 'PQ15']] = posOnly[['ACT', 'CQ' , 'PQ7.5', 'PQ15']].replace([77, 99], 0)
+    posOnly['PQ'] = posOnly['PQ7.5'] + (posOnly['PQ15']*2)
+    posOnly['Clinical audit'] = np.where(
+        ((posOnly['Referred'] == 'Y') & (posOnly['Diagnosis'] == 'Severe')),'Referred (Severe)',
+        np.where(((posOnly['Referred'] == 'Y') & (posOnly['Age group'] == '0. <1 yr')),'Referred (u1)',
+        np.where(((posOnly['Referred'] == 'Y') & ((posOnly['Pregnancy'] == -1) | (posOnly['Pregnancy'] > 0))),'Referred (Preg/Lactating)',
+        np.where(((posOnly['Referred'] == 'Y')),'Referred (Other)',
+        np.where((((posOnly['Pregnancy'] > 0) | (posOnly['Pregnancy'] == -1)) & (posOnly['Test Result'] == 'PF') & (posOnly['Age group'] == '0. <1 yr') & (posOnly['ACT'] == 3) & (posOnly['CQ'] == 0) & (posOnly['PQ'] == 0)),"NTG",
+        np.where((((posOnly['Pregnancy'] > 0) | (posOnly['Pregnancy'] == -1)) & (posOnly['Test Result'] == 'PF') & (posOnly['Age group'] == '1. 1-4 yr') & (posOnly['ACT'] == 6) & (posOnly['CQ'] == 0) & (posOnly['PQ'] == 0)),"NTG",
+        np.where((((posOnly['Pregnancy'] > 0) | (posOnly['Pregnancy'] == -1)) & (posOnly['Test Result'] == 'PF') & (posOnly['Age group'] == '2. 5-9 yr') & (posOnly['ACT'] == 12) & (posOnly['CQ'] == 0) & (posOnly['PQ'] == 0)),"NTG",
+        np.where((((posOnly['Pregnancy'] > 0) | (posOnly['Pregnancy'] == -1)) & (posOnly['Test Result'] == 'PF') & (posOnly['Age group'] == '3. 10-14 yr') & (posOnly['ACT'] == 18) & (posOnly['CQ'] == 0) & (posOnly['PQ'] == 0)),"NTG",
+        np.where((((posOnly['Pregnancy'] > 0) | (posOnly['Pregnancy'] == -1)) & (posOnly['Test Result'] == 'PF') & (posOnly['Age group'] == '4. >=15 yr') & (posOnly['ACT'] == 24) & (posOnly['CQ'] == 0) & (posOnly['PQ'] == 0)),"NTG",
+        np.where((((posOnly['Pregnancy'] > 0) | (posOnly['Pregnancy'] == -1)) & (posOnly['Test Result'] == 'PV') & (posOnly['Age group'] == '0. <1 yr') & (posOnly['ACT'] == 0) & (posOnly['CQ'] == 1) & (posOnly['PQ'] == 0)),"NTG",
+        np.where((((posOnly['Pregnancy'] > 0) | (posOnly['Pregnancy'] == -1)) & (posOnly['Test Result'] == 'PV') & (posOnly['Age group'] == '1. 1-4 yr') & (posOnly['ACT'] == 0) & (posOnly['CQ'] == 4) & (posOnly['PQ'] == 0)),"NTG",
+        np.where((((posOnly['Pregnancy'] > 0) | (posOnly['Pregnancy'] == -1)) & (posOnly['Test Result'] == 'PV') & (posOnly['Age group'] == '2. 5-9 yr') & (posOnly['ACT'] == 0) & (posOnly['CQ'] == 5) & (posOnly['PQ'] == 0)),"NTG",
+        np.where((((posOnly['Pregnancy'] > 0) | (posOnly['Pregnancy'] == -1)) & (posOnly['Test Result'] == 'PV') & (posOnly['Age group'] == '3. 10-14 yr') & (posOnly['ACT'] == 0) & (posOnly['CQ'] == 7.5) & (posOnly['PQ'] == 0)),"NTG",
+        np.where((((posOnly['Pregnancy'] > 0) | (posOnly['Pregnancy'] == -1)) & (posOnly['Test Result'] == 'PV') & (posOnly['Age group'] == '4. >=15 yr') & (posOnly['ACT'] == 0) & (posOnly['CQ'] == 10) & (posOnly['PQ'] == 0)),"NTG",
+        np.where((((posOnly['Pregnancy'] > 0) | (posOnly['Pregnancy'] == -1)) & (posOnly['Test Result'] == 'MIXED') & (posOnly['Age group'] == '0. <1 yr') & (posOnly['ACT'] == 3) & (posOnly['CQ'] == 0) & (posOnly['PQ'] == 0)),"NTG",
+        np.where((((posOnly['Pregnancy'] > 0) | (posOnly['Pregnancy'] == -1)) & (posOnly['Test Result'] == 'MIXED') & (posOnly['Age group'] == '1. 1-4 yr') & (posOnly['ACT'] == 6) & (posOnly['CQ'] == 0) & (posOnly['PQ'] == 0)),"NTG",
+        np.where((((posOnly['Pregnancy'] > 0) | (posOnly['Pregnancy'] == -1)) & (posOnly['Test Result'] == 'MIXED') & (posOnly['Age group'] == '2. 5-9 yr') & (posOnly['ACT'] == 12) & (posOnly['CQ'] == 0) & (posOnly['PQ'] == 0)),"NTG",
+        np.where((((posOnly['Pregnancy'] > 0) | (posOnly['Pregnancy'] == -1)) & (posOnly['Test Result'] == 'MIXED') & (posOnly['Age group'] == '3. 10-14 yr') & (posOnly['ACT'] == 18) & (posOnly['CQ'] == 0) & (posOnly['PQ'] == 0)),"NTG",
+        np.where((((posOnly['Pregnancy'] > 0) | (posOnly['Pregnancy'] == -1)) & (posOnly['Test Result'] == 'MIXED') & (posOnly['Age group'] == '4. >=15 yr') & (posOnly['ACT'] == 24) & (posOnly['CQ'] == 0) & (posOnly['PQ'] == 0)),"NTG",
+        np.where((((posOnly['Pregnancy'] == 0) | (posOnly['Pregnancy'] == "") | (posOnly['Pregnancy'].isnull())) & (posOnly['Test Result'] == 'PF') & (posOnly['Age group'] == '0. <1 yr') & (posOnly['ACT'] == 3) & (posOnly['CQ'] == 0) & (posOnly['PQ'] == 0)),"NTG",
+        np.where((((posOnly['Pregnancy'] == 0) | (posOnly['Pregnancy'] == "") | (posOnly['Pregnancy'].isnull())) & (posOnly['Test Result'] == 'PF') & (posOnly['Age group'] == '1. 1-4 yr') & (posOnly['ACT'] == 6) & (posOnly['CQ'] == 0) & (posOnly['PQ'] == 1)),"NTG",
+        np.where((((posOnly['Pregnancy'] == 0) | (posOnly['Pregnancy'] == "") | (posOnly['Pregnancy'].isnull())) & (posOnly['Test Result'] == 'PF') & (posOnly['Age group'] == '2. 5-9 yr') & (posOnly['ACT'] == 12) & (posOnly['CQ'] == 0) & (posOnly['PQ'] == 2)),"NTG",
+        np.where((((posOnly['Pregnancy'] == 0) | (posOnly['Pregnancy'] == "") | (posOnly['Pregnancy'].isnull())) & (posOnly['Test Result'] == 'PF') & (posOnly['Age group'] == '3. 10-14 yr') & (posOnly['ACT'] == 18) & (posOnly['CQ'] == 0) & (posOnly['PQ'] == 4)),"NTG",
+        np.where((((posOnly['Pregnancy'] == 0) | (posOnly['Pregnancy'] == "") | (posOnly['Pregnancy'].isnull())) & (posOnly['Test Result'] == 'PF') & (posOnly['Age group'] == '4. >=15 yr') & (posOnly['ACT'] == 24) & (posOnly['CQ'] == 0) & (posOnly['PQ'] == 6)),"NTG",
+        np.where((((posOnly['Pregnancy'] == 0) | (posOnly['Pregnancy'] == "") | (posOnly['Pregnancy'].isnull())) & (posOnly['Test Result'] == 'PV') & (posOnly['Age group'] == '0. <1 yr') & (posOnly['ACT'] == 0) & (posOnly['CQ'] == 1) & (posOnly['PQ'] == 0)),"NTG",
+        np.where((((posOnly['Pregnancy'] == 0) | (posOnly['Pregnancy'] == "") | (posOnly['Pregnancy'].isnull())) & (posOnly['Test Result'] == 'PV') & (posOnly['Age group'] == '1. 1-4 yr') & (posOnly['ACT'] == 0) & (posOnly['CQ'] == 4) & (posOnly['PQ'] == 7)),"NTG",
+        np.where((((posOnly['Pregnancy'] == 0) | (posOnly['Pregnancy'] == "") | (posOnly['Pregnancy'].isnull())) & (posOnly['Test Result'] == 'PV') & (posOnly['Age group'] == '2. 5-9 yr') & (posOnly['ACT'] == 0) & (posOnly['CQ'] == 5) & (posOnly['PQ'] == 14)),"NTG",
+        np.where((((posOnly['Pregnancy'] == 0) | (posOnly['Pregnancy'] == "") | (posOnly['Pregnancy'].isnull())) & (posOnly['Test Result'] == 'PV') & (posOnly['Age group'] == '3. 10-14 yr') & (posOnly['ACT'] == 0) & (posOnly['CQ'] == 7.5) & (posOnly['PQ'] == 21)),"NTG",
+        np.where((((posOnly['Pregnancy'] == 0) | (posOnly['Pregnancy'] == "") | (posOnly['Pregnancy'].isnull())) & (posOnly['Test Result'] == 'PV') & (posOnly['Age group'] == '4. >=15 yr') & (posOnly['ACT'] == 0) & (posOnly['CQ'] == 10) & (posOnly['PQ'] == 28)),"NTG",
+        np.where((((posOnly['Pregnancy'] == 0) | (posOnly['Pregnancy'] == "") | (posOnly['Pregnancy'].isnull())) & (posOnly['Test Result'] == 'MIXED') & (posOnly['Age group'] == '0. <1 yr') & (posOnly['ACT'] == 3) & (posOnly['CQ'] == 0) & (posOnly['PQ'] == 0)),"NTG",
+        np.where((((posOnly['Pregnancy'] == 0) | (posOnly['Pregnancy'] == "") | (posOnly['Pregnancy'].isnull())) & (posOnly['Test Result'] == 'MIXED') & (posOnly['Age group'] == '1. 1-4 yr') & (posOnly['ACT'] == 6) & (posOnly['CQ'] == 0) & (posOnly['PQ'] == 7)),"NTG",
+        np.where((((posOnly['Pregnancy'] == 0) | (posOnly['Pregnancy'] == "") | (posOnly['Pregnancy'].isnull())) & (posOnly['Test Result'] == 'MIXED') & (posOnly['Age group'] == '2. 5-9 yr') & (posOnly['ACT'] == 12) & (posOnly['CQ'] == 0) & (posOnly['PQ'] == 14)),"NTG",
+        np.where((((posOnly['Pregnancy'] == 0) | (posOnly['Pregnancy'] == "") | (posOnly['Pregnancy'].isnull())) & (posOnly['Test Result'] == 'MIXED') & (posOnly['Age group'] == '3. 10-14 yr') & (posOnly['ACT'] == 18) & (posOnly['CQ'] == 0) & (posOnly['PQ'] == 21)),"NTG",
+        np.where((((posOnly['Pregnancy'] == 0) | (posOnly['Pregnancy'] == "") | (posOnly['Pregnancy'].isnull())) & (posOnly['Test Result'] == 'MIXED') & (posOnly['Age group'] == '4. >=15 yr') & (posOnly['ACT'] == 24) & (posOnly['CQ'] == 0) & (posOnly['PQ'] == 28)),"NTG", "NNTG"
+        ))))))))))))))))))))))))))))))))))
+    posOnly = json.loads(posOnly.to_json(orient='records'))
+    return posOnly
