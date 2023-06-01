@@ -123,7 +123,7 @@ class dataProcess:
     prData = prData.query("`Township OD` != '' and `Test Result` != '' and `Tested Date` != ''")
     prData = pd.json_normalize(prData.to_dict("records"))
     prData['Age Year'] = pd.to_numeric(prData['Age Year'], downcast="float")
-    prData['Pregnancy'] = prData['Pregnancy'].str.replace(" ","")
+    prData['Pregnancy Month (Lactating mother - (-1))'] = prData['Pregnancy Month (Lactating mother - (-1))'].str.replace(" ","")
     prData['Pregnancy'] = pd.to_numeric(prData['Pregnancy Month (Lactating mother - (-1))'], downcast="float")
     prData['ACT'] = pd.to_numeric(prData['Number of ACT tab treated (not indicated = 77)'], downcast="float")
     prData['CQ'] = pd.to_numeric(prData['Number of CQ tab treated (not indicated = 77)'], downcast="float")
