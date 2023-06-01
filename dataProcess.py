@@ -120,7 +120,7 @@ class dataProcess:
 
   def prepare_patient_record(patient_record):
     prData = pd.json_normalize(patient_record)
-    prData = prData.query("`Township OD` != '' and `Test Result` != '' and `Tested Date` != ''")
+    prData = prData.query("`Township OD` != '' and `Test Result` != '' and `Tested Date` != '' and `Reporting Month` != '' and `Reporting Year` != ''")
     prData = pd.json_normalize(prData.to_dict("records"))
     prData['Age Year'] = pd.to_numeric(prData['Age Year'], downcast="float")
     prData['Pregnancy Month (Lactating mother - (-1))'] = prData['Pregnancy Month (Lactating mother - (-1))'].str.replace(" ","")
