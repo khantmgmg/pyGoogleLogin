@@ -27,8 +27,8 @@ class dataProcess:
     allVillages = pd.json_normalize(all_villages_data)
     allProvider = pd.json_normalize(all_provider_data)
     allProvider = pd.merge(allProvider, allVillages[['Township', 'State_Region']], left_on=['Township'], right_on=['Township'], how='left')
-    allProvider = allProvider.sort_values("Person_Code")
     allProvider = allProvider.drop_duplicates()
+    allProvider = allProvider.sort_values("Person_Code")
     return json.loads(allProvider.to_json(orient='records'))
 
   # Calculate Total IPC data from IPC_additional and Patient record
