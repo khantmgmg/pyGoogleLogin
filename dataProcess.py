@@ -239,6 +239,18 @@ class dataProcess:
     caseMxByRpMth = json.loads(caseMxByRpMth.to_json(orient='records'))
     return caseMxByRpMth
   
+  def casemx_by_rpMth_top_ptAddr(patient_record):
+    df = pd.json_normalize(patient_record)
+    casemxbyrpMthtopptAddr = df.groupby(['Organization', 'State Region', 'Township OD', 'Type of Provider', 'Reported By',\
+                                'Activity', 'Response to Case ID',\
+                                'Reporting Month', 'Reporting Year', 'Village or Location Code of patient address if available', 'RHC', 'Sub-center', 'Address',\
+                                'Sex', 'Population Type', 'Test Result',\
+                                ]).agg({'Name':'count'})
+    casemxbyrpMthtopptAddr = casemxbyrpMthtopptAddr.reset_index()
+    casemxbyrpMthtopptAddr = casemxbyrpMthtopptAddr.rename(columns={'Name':'Number of patients'})
+    casemxbyrpMthtopptAddr = json.loads(casemxbyrpMthtopptAddr.to_json(orient='records'))
+    return casemxbyrpMthtopptAddr
+  
   def positive_only(patient_record):
     df = pd.json_normalize(patient_record)
     positive = ['PF','PV','MIXED','Pf','Pv','Mixed','pf','pv','mixed']
