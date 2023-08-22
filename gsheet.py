@@ -73,7 +73,7 @@ class GoogleSheets:
         try:
             result = self.service.spreadsheets().values().update(
                 spreadsheetId=self.spreadsheet_id, range=range_name,
-                valueInputOption='RAW', body=body).execute()
+                valueInputOption='USER_ENTERED', body=body).execute()
             return result
         except HttpError as error:
             print(f"An error occurred: {error}")
