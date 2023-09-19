@@ -150,3 +150,51 @@ class GoogleSheets:
             except HttpError as error:
                 print(f"An error occurred: {error}")
                 return None
+
+    def add_multiple_sheets(self, listOfSheetName: list):
+        request_body = {'requests':[]}
+        for shName in listOfSheetName:
+            tmpProp = {
+                'properties': {
+                    'title': shName,
+                    'index': 0,
+                    'sheetType': 'GRID',
+                    'hidden': False
+                }
+            }
+            request_body['requests'].append({'addSheet': tmpProp})        
+        try:
+            result = self.service.spreadsheets().batchUpdate(
+                spreadsheetId = self.spreadsheet_id,
+                body = request_body
+            ).execute()
+            print(result)
+        except HttpError as error:
+            print(f"An error occurred: {error}")
+            return None
+    
+    def add_one_sheet(self, sheet_title: str):
+        sheet_prop = {
+            'properties': {
+                'title': sheet_title,
+                'index': 0,
+                'sheetType': 'GRID',
+                'hidden': False
+            }
+        }
+        request_body = {
+            'requests': [
+                {
+                    'addSheet': sheet_prop
+                }
+            ]
+        }
+        try:
+            result = self.service.spreadsheets().batchUpdate(
+                spreadsheetId = self.spreadsheet_id,
+                body = request_body
+            ).execute()
+            print(result)
+        except HttpError as error:
+            print(f"An error occurred: {error}")
+            return None
