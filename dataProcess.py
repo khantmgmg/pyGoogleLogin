@@ -201,7 +201,8 @@ class dataProcess:
                                   (`Type of Provider` == 'ICMV-V' or \
                                   `Type of Provider` == 'ICMV-W' or \
                                   `Type of Provider` == 'MMW' or \
-                                  `Type of Provider` == 'GP')")
+                                  `Type of Provider` == 'GP' or \
+                                  `Type of Provider` == 'Private hospital')")
     rpPerform = pd.json_normalize(rpPerform.to_dict("records"))
     # print(rpPerform.dtypes)
     rpPerform['Year in Carbonless'] = rpPerform['Year in Carbonless'].str.replace(',','')
