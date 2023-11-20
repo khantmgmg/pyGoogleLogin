@@ -138,7 +138,8 @@ class dataProcess:
         np.where((prData['Age Year'] >= 5), '2. 5-9 yr',
         np.where((prData['Age Year'] >= 1), '1. 1-4 yr','0. <1 yr')))
     )
-    prData['Tested Date'] = pd.to_datetime(prData['Tested Date'], format='%d-%b-%Y')
+    # prData['Tested Date'] = pd.to_datetime(prData['Tested Date'], format='%d-%b-%Y')
+    prData['Tested Date'] = pd.to_datetime(prData['Tested Date'])
     prData['Tested month'] = prData['Tested Date'] + pd.offsets.MonthEnd(0)
     prData['Tested Date'] = prData['Tested Date'].dt.strftime('%d-%b-%Y')
     prData['Tested month'] = prData['Tested month'].dt.strftime('%b-%Y')
