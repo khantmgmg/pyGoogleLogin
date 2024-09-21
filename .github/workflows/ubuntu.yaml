@@ -1,0 +1,37 @@
+name: Run Ubuntu Server
+
+on: [push]
+
+jobs:
+  run-ubuntu:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Print working directory
+      run: pwd
+
+    - name: Check if script folder exists
+      run: |
+        if [ -d "script" ]; then
+          echo "Directory 'script' exists."
+        else
+          echo "Directory 'script' does not exist."
+          exit 1
+        fi
+
+    - name: Check if run_forever.py exists
+      run: |
+        if [ -f "script/run_forever.py" ]; then
+          echo "File 'run_forever.py' exists."
+        else
+          echo "File 'run_forever.py' does not exist."
+          exit 1
+        fi
+
+    - name: List files in current directory
+      run: ls
+
+    - name: Run Python script
+      run: |
+        python3 script/run_forever.py  # Run the script from the 'script' folder
